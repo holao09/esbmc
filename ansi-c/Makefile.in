@@ -146,8 +146,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_c2goto_OBJECTS = c2goto.$(OBJEXT) cprover_blank_library.$(OBJEXT)
 c2goto_OBJECTS = $(am_c2goto_OBJECTS)
 c2goto_DEPENDENCIES = libansic.la libansicscanner.la \
-	../clang-c-frontend/libclangcfrontend.a \
-	../clang-cpp-frontend/libclangcppfrontend.a \
 	../big-int/libbigint.a ../goto-programs/libgotoprograms.a \
 	../langapi/liblangapi.a ../util/libutil.a cpp/libcpp.a \
 	./headers/libheaders.a
@@ -326,6 +324,8 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ESBMC_AVAILABLE_SOLVERS = @ESBMC_AVAILABLE_SOLVERS@
 ESBMC_CFLAGS = @ESBMC_CFLAGS@
+ESBMC_CLANG_ARCHIVES = @ESBMC_CLANG_ARCHIVES@
+ESBMC_CLANG_SUBDIRS = @ESBMC_CLANG_SUBDIRS@
 ESBMC_CXXFLAGS = @ESBMC_CXXFLAGS@
 ESBMC_CXXFLAGS_WARNINGS = @ESBMC_CXXFLAGS_WARNINGS@
 ESBMC_ENABLE_boolector = @ESBMC_ENABLE_boolector@
@@ -489,8 +489,8 @@ libansic_la_SOURCES = parser.ypp \
 libansic_la_LIBADD = libansicscanner.la
 BUILT_SOURCES = parser.hpp
 c2goto_SOURCES = c2goto.cpp cprover_blank_library.cpp -I$(top_srcdir)/utils
-c2goto_LDADD = libansic.la libansicscanner.la ../clang-c-frontend/libclangcfrontend.a \
-      ../clang-cpp-frontend/libclangcppfrontend.a ../big-int/libbigint.a \
+c2goto_LDADD = libansic.la libansicscanner.la @ESBMC_CLANG_ARCHIVES@ \
+      ../big-int/libbigint.a \
       ../goto-programs/libgotoprograms.a ../langapi/liblangapi.a \
       ../util/libutil.a cpp/libcpp.a ./headers/libheaders.a
 

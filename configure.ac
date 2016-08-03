@@ -77,9 +77,30 @@ AC_CHECK_LIB([gmp], [__gmpz_cmp],
     [AC_MSG_WARN([No libgmp found: various solvers require it])], []
 )
 
-AX_CLANG(3.8.0, [], [AC_MSG_ERROR([Cannot find clang lib dir, please pass it in --with-clang-libdir argument or set CLANG_ROOT])])
+# Define what to do when clang is enabled
+m4_define(ESBMC_ENABLE_CLANG, [
+  AX_CLANG(3.8.0, [], [AC_MSG_ERROR([Cannot find clang lib dir, please pass it in --with-clang-libdir argument or set CLANG_ROOT])])
+  AX_LLVM(,[AC_MSG_FAILURE(LLVM is required.)])
+  AC_SUBST([ESBMC_CLANG_SUBDIRS], " clang-c-frontend clang-cpp-frontend ")
+  AC_SUBST([ESBMC_CLANG_ARCHIVES], "  ../clang-c-frontend/libclangcfrontend.a ../clang-cpp-frontend/libclangcppfrontend.a ")
+  ])
 
-AX_LLVM(,[AC_MSG_FAILURE(LLVM is required.)])
+AC_ARG_ENABLE(clang, [AS_HELP_STRING([--disable-clang], Build ESBMC without clang. (On by default))],
+[
+  dnl If specified, enable clang if asked for, otherwise user asked it to be
+  dnl disabled.
+  AS_IF([test "${enable_clang}" = "yes"], [
+    ESBMC_ENABLE_CLANG
+  ], [
+    AS_VAR_SET(ESBMC_CLANG_CXXFLAGS, " -DWITHOUT_CLANG ")
+    AS_VAR_SET(ESBMC_CLANG_CFLAGS, " -DWITHOUT_CLANG ")
+  ]
+)
+], [
+  # If unspecified, enable clang anyway
+  ESBMC_ENABLE_CLANG
+]
+)
 
 AC_CHECK_HEADERS([boost/mpl/if.hpp], [], [AC_MSG_ERROR([No boost mpl found])])
 AC_CHECK_HEADERS([boost/shared_ptr.hpp], [], [AC_MSG_ERROR([No boost shared ptr found])])
@@ -152,16 +173,20 @@ AC_SUBST([ESBMC_LDFLAGS], $ESBMC_LDFLAGS)
 
 AC_ARG_ENABLE(werror, [AS_HELP_STRING([--disable-werror], Disable werror build flag)])
 
+AS_VAR_SET(BASE_CXXFLAGS, "-Wall -Wextra -W -std=c++11 $ESBMC_CLANG_CXXFLAGS ")
+dnl A necessary evil due to the presence of rubbish in boost::python's headers
+AS_VAR_APPEND(BASE_CXXFLAGS, " -Wno-unused-local-typedefs -Wno-deprecated-declarations ")
+
 dnl # Do not turn -Werror off: your code is wrong, not -Werror.
 dnl Unless of course you're on a mac, in which case clang will frequently
 dnl generate new warnings, and you probably want it off. This should be used
 dnl with care in that case.
 AS_IF([test "x$enable_werror" = "xno"], [
-  AC_SUBST([ESBMC_CXXFLAGS],[["-Wall -Wextra -W -std=c++11"]])
+  AC_SUBST([ESBMC_CXXFLAGS],[["$BASE_CXXFLAGS"]])
   AC_SUBST([ESBMC_CFLAGS],[["-Wall -Wextra -W"]])
 ], [
   dnl not disabled -> enable werror
-  AC_SUBST([ESBMC_CXXFLAGS],[["-Wall -Wextra -W -std=c++11 -Werror"]])
+  AC_SUBST([ESBMC_CXXFLAGS],[["$BASE_CXXFLAGS -Werror"]])
   AC_SUBST([ESBMC_CFLAGS],[["-Wall -Wextra -W -Werror"]])
 ])
 
