@@ -43,7 +43,8 @@ extern "C" {
 #include <goto-programs/read_goto_binary.h>
 #include <goto-programs/loop_numbers.h>
 #include <goto-programs/goto_k_induction.h>
-
+#include <goto-programs/remove_skip.h>
+#include <goto-programs/remove_unreachable.h>
 #include <goto-programs/add_race_assertions.h>
 
 #include <pointer-analysis/value_set_analysis.h>
@@ -230,10 +231,10 @@ void cbmc_parseoptionst::get_command_line_options(optionst &options)
 
   options.set_option("fixedbv", true);
 
-  if(cmdline.isset("context-switch"))
-    options.set_option("context-switch", cmdline.getval("context-switch"));
+  if(cmdline.isset("context-bound"))
+    options.set_option("context-bound", cmdline.getval("context-bound"));
   else
-    options.set_option("context-switch", -1);
+    options.set_option("context-bound", -1);
 
   if(cmdline.isset("lock-order-check"))
     options.set_option("lock-order-check", true);
@@ -1668,6 +1669,16 @@ bool cbmc_parseoptionst::process_goto_program(
     // add re-evaluations of monitored properties
     add_property_monitors(goto_functions, ns);
 
+    // remove skips
+    remove_skip(goto_functions);
+
+    // remove unreachable code
+    Forall_goto_functions(f_it, goto_functions)
+      remove_unreachable(f_it->second.body);
+
+    // remove skips
+    remove_skip(goto_functions);
+
     // recalculate numbers, etc.
     goto_functions.update();
 
@@ -1828,7 +1839,12 @@ void cbmc_parseoptionst::help()
     " --ir                         use solver with integer/real arithmetic\n"
     " --eager                      use eager instantiation\n"
     " --lazy                       use lazy instantiation (default)\n"
-    " --outfile Filename           output VCCs in SMT lib format to given file\n\n"
+    " --smtlib                     use SMT lib format\n"
+    " --output Filename            output VCCs in SMT lib format to given file\n\n"
+    "Incremental SMT solving with Z3\n"
+    " --smt-during-symex           enable incremental SMT solving (experimental)\n"
+    " --smt-thread-guard           call the solver during thread exploration (experimental)\n"
+    " --smt-symex-guard            call the solver during symbolic execution (experimental)\n\n"
     "Property checking\n"
     " --no-assertions              ignore assertions\n"
     " --no-bounds-check            do not do array bounds check\n"
@@ -1856,7 +1872,7 @@ void cbmc_parseoptionst::help()
     " --time-slice nr              set the time slice of the round robin algorithm\n"
     "                              (default is 1) \n\n"
     "Concurrency checking\n"
-    " --context-switch nr          limit number of context switches for each thread \n"
+    " --context-bound nr           limit number of context switches for each thread \n"
     " --state-hashing              enable state-hashing, prunes duplicate states\n"
     " --control-flow-test          enable context switch before control flow tests\n"
     " --no-por                     do not do partial order reduction\n\n"

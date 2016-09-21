@@ -146,9 +146,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_c2goto_OBJECTS = c2goto.$(OBJEXT) cprover_blank_library.$(OBJEXT)
 c2goto_OBJECTS = $(am_c2goto_OBJECTS)
 c2goto_DEPENDENCIES = libansic.la libansicscanner.la \
-	../big-int/libbigint.a ../goto-programs/libgotoprograms.a \
-	../langapi/liblangapi.a ../util/libutil.a cpp/libcpp.a \
-	./headers/libheaders.a
+	../big-int/libbigint.a ../cpp/libcxx.la \
+	../goto-programs/libgotoprograms.a ../langapi/liblangapi.a \
+	../util/libutil.a cpp/libcpp.a ./headers/libheaders.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -490,7 +490,7 @@ libansic_la_LIBADD = libansicscanner.la
 BUILT_SOURCES = parser.hpp
 c2goto_SOURCES = c2goto.cpp cprover_blank_library.cpp -I$(top_srcdir)/utils
 c2goto_LDADD = libansic.la libansicscanner.la @ESBMC_CLANG_ARCHIVES@ \
-      ../big-int/libbigint.a \
+      ../big-int/libbigint.a ../cpp/libcxx.la \
       ../goto-programs/libgotoprograms.a ../langapi/liblangapi.a \
       ../util/libutil.a cpp/libcpp.a ./headers/libheaders.a
 
@@ -960,11 +960,11 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
-clib32.c: c2goto
+clib32.c: c2goto $(srcdir)/library/*.c
 	./c2goto $(srcdir)/library/*.c --output clib32.goto
 	$(srcdir)/headers/flail.sh clib32 clib32.goto > $@
 
-clib64.c: c2goto
+clib64.c: c2goto $(srcdir)/library/*.c
 	./c2goto $(srcdir)/library/*.c --64 --output clib64.goto
 	$(srcdir)/headers/flail.sh clib64 clib64.goto > $@
 
